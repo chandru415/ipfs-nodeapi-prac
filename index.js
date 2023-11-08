@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 
 import { noise } from "@chainsafe/libp2p-noise";
 import { yamux } from "@chainsafe/libp2p-yamux";
@@ -26,6 +27,7 @@ let fs;
 let fs2;
 
 app.use(express.json());
+app.use(cors())
 
 // listen
 app.listen(port, () => {
