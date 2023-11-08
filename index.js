@@ -107,16 +107,12 @@ async function createLocalNodes() {
 
   return [
     {
-      node: {
-        Id: node1.libp2p.peerId.toString(),
-        status: node1.libp2p.isStarted(),
-      },
+      Id: node1.libp2p.peerId.toString(),
+      status: node1.libp2p.isStarted(),
     },
     {
-      node: {
-        Id: node2.libp2p.peerId.toString(),
-        status: node2.libp2p.isStarted(),
-      },
+      Id: node2.libp2p.peerId.toString(),
+      status: node2.libp2p.isStarted(),
     },
   ];
 }
@@ -160,5 +156,5 @@ async function getTextByNode2(cid) {
       stream: true,
     });
   }
-  return {node: node2.libp2p.peerId.toString(), content};
+  return { node: node2.libp2p.peerId.toString(), content };
 }
