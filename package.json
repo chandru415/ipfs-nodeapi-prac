@@ -1,0 +1,27 @@
+{
+  "name": "ipfs-nodeapi-prac",
+  "version": "1.0.0",
+  "description": "ipfs-nodeapi-prac",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@chainsafe/libp2p-noise": "^13.0.1",
+    "@chainsafe/libp2p-yamux": "^5.0.0",
+    "@helia/unixfs": "^1.4.1",
+    "@libp2p/bootstrap": "^9.0.8",
+    "@libp2p/tcp": "^8.0.9",
+    "blockstore-core": "^4.1.0",
+    "datastore-core": "^9.1.1",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "helia": "^2.0.3",
+    "libp2p": "^0.46.14",
+    "nodemon": "^3.0.1"
+  }
+}
