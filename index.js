@@ -1,5 +1,9 @@
 import express from "express";
 import cors from "cors";
+import multer from "multer";
+import path from "path";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
 
 import { noise } from "@chainsafe/libp2p-noise";
 import { yamux } from "@chainsafe/libp2p-yamux";
@@ -26,8 +30,33 @@ let node2;
 let fs;
 let fs2;
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// // Set up multer for file uploads
+// const storage = multer.diskStorage({
+//   destination: function (req, file, cb) {
+//     cb(null, "uploads/"); // Uploads will be stored in the 'uploads/' directory
+//   },
+//   filename: function (req, file, cb) {
+//     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+//     cb(
+//       null,
+//       file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname)
+//     );
+//   },
+// });
+
+// Set up Multer to handle file uploads
+const storage = multer.memoryStorage();
+
+const upload = multer({ storage: storage });
+
 app.use(express.json());
-app.use(cors())
+app.use(cors());
+
+// Serve static files in the 'uploads/' directory
+app.use("/uploads", express.static("uploads"));
 
 // listen
 app.listen(port, () => {
@@ -41,27 +70,56 @@ app.get("/", (req, res) => {
 
 // CreateNodes
 
-app.get("/createnodes", async (req, res) => {
+app.get("/api/createnodes", async (req, res) => {
   const nodes = await createLocalNodes();
   res.send(nodes);
 });
 
 // Map Nodes
-app.get("/mapnodes", async (req, res) => {
+app.get("/api/mapnodes", async (req, res) => {
   const connDtl = await MapTogetherCreateFs();
   res.send(connDtl);
 });
 
 // add a content
-app.post("/content", async (req, res) => {
+app.post("/api/content", async (req, res) => {
   const cid = await addText(req.body.content);
   res.status(200).json(cid);
 });
 
 // GET content
-app.get("/content/:cid", async (req, res) => {
+app.get("/api/content/:cid", async (req, res) => {
   const content = await getTextByNode2(req.params.cid);
-  res.send(content);
+  res.json(content);
+});
+
+// Define a route for handling file uploads
+app.post("/api/upload", upload.single("file"), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ message: "No file uploaded" });
+  }
+  
+  // Process the uploaded file as needed
+  const cid = await uploadFile(
+    req.file.originalname,
+    req.file.buffer.toString()
+  );
+
+  // For now, just send a success response with file details
+  res.status(200).json({
+    message: "File uploaded successfully",
+    file: {
+      filename: req.file.originalname,
+      size: req.file.size,
+      cid,
+    },
+  });
+});
+
+// GET file
+app.get("/api/file/:cid", async (req, res) => {
+  const content = await getTextByNode2(req.params.cid);
+  res.json(content);
 });
 
 async function createNode() {
@@ -159,4 +217,32 @@ async function getTextByNode2(cid) {
     });
   }
   return { node: node2.libp2p.peerId.toString(), content };
+}
+
+async function getFileByNode2(cid) {
+  // this decoder will turn Uint8Arrays into strings
+  const decoder = new TextDecoder();
+  let content = "";
+
+  // use the second Helia node to fetch the file from the first Helia node
+  for await (const chunk of fs2.cat(cid)) {
+    content += decoder.decode(chunk, {
+      stream: true,
+    });
+  }
+  return { node: node2.libp2p.peerId.toString(), content };
+}
+
+async function uploadFile(name, content) {
+  const fileToAdd = {
+    path: `${name}`,
+    content: new TextEncoder().encode(content), // we will use this TextEncoder to turn strings into Uint8Arrays
+  };
+
+  // add the bytes to your node and receive a unique content identifier
+  const cid = await fs.addFile(fileToAdd);
+
+  console.log("Added file:", cid.toString());
+
+  return cid.toString();
 }
