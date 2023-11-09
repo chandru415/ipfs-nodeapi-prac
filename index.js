@@ -55,7 +55,7 @@ app.get("/mapnodes", async (req, res) => {
 // add a content
 app.post("/content", async (req, res) => {
   const cid = await addText(req.body.content);
-  res.send(cid);
+  res.status(200).json(cid);
 });
 
 // GET content
@@ -109,11 +109,11 @@ async function createLocalNodes() {
 
   return [
     {
-      Id: node1.libp2p.peerId.toString(),
+      id: node1.libp2p.peerId.toString(),
       status: node1.libp2p.isStarted(),
     },
     {
-      Id: node2.libp2p.peerId.toString(),
+      id: node2.libp2p.peerId.toString(),
       status: node2.libp2p.isStarted(),
     },
   ];
