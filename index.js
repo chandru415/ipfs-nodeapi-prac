@@ -98,9 +98,9 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ message: "No file uploaded" });
   }
-  
+
   // Process the uploaded file as needed
-  const cid = await uploadFile(
+  const data = await uploadFile(
     req.file.originalname,
     req.file.buffer.toString()
   );
@@ -111,14 +111,14 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
     file: {
       filename: req.file.originalname,
       size: req.file.size,
-      cid,
+      data,
     },
   });
 });
 
 // GET file
 app.get("/api/file/:cid", async (req, res) => {
-  const content = await getTextByNode2(req.params.cid);
+  const content = await getFileByNode2(req.params.cid);
   res.json(content);
 });
 
@@ -230,19 +230,41 @@ async function getFileByNode2(cid) {
       stream: true,
     });
   }
-  return { node: node2.libp2p.peerId.toString(), content };
+  return { node: node2.libp2p.peerId.toString(),  content };
 }
 
 async function uploadFile(name, content) {
-  const fileToAdd = {
-    path: `${name}`,
-    content: new TextEncoder().encode(content), // we will use this TextEncoder to turn strings into Uint8Arrays
-  };
+  let dCid = '';
+  try {
+    const emptyDirCid = await fs.addDirectory('uploads');
+    dCid = await fs.mkdir(emptyDirCid, 'uploads');
+  } catch (e) {
+    console.error(e);
+  }
+  let cid;
 
-  // add the bytes to your node and receive a unique content identifier
-  const cid = await fs.addFile(fileToAdd);
+  try {
+    cid = await fs.addFile({
+      path: `${name}`,
+      content: new TextEncoder().encode(content)
+    })
+    const updatedCid = await fs.cp(cid, dCid, name)
+    return { dirCid: updatedCid.toString(), fileCid: cid.toString() };
+  } catch (e) {
+    console.error(e)
+  }
+        
+  // const fileToAdd = {
+  //   path: `${name}`,
+  //   content: new TextEncoder().encode(content), // we will use this TextEncoder to turn strings into Uint8Arrays
+  // };
 
-  console.log("Added file:", cid.toString());
+  // // add the bytes to your node and receive a unique content identifier
+  // const cid = await fs.addFile(fileToAdd);
 
-  return cid.toString();
+
+
+  // console.log("Added file:", cid.toString());
+
+  // return cid.toString();
 }
